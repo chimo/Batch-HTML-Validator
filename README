@@ -1,0 +1,14 @@
+Using your local validator:
+
+1. Install the validator: http://validator.w3.org/docs/install.html
+2. (Optional) Install the HTML 5 validator: http://about.validator.nu/
+3. Install the "WebService-Validator-HTML-W3C" Perl module: http://search.cpan.org/dist/WebService-Validator-HTML-W3C/
+4. (Optional) Change the url to your own validator on the line that says: $v->validator_uri("http://localhost/w3c-validator/check");
+5. Visit "batchValid.html" in your browser, put your URIs in the textbox separated by newlines and click the button
+
+Using validator.w3.org:
+
+1. Install the "WebService-Validator-HTML-W3C" Perl module: http://search.cpan.org/dist/WebService-Validator-HTML-W3C/
+2. Comment out the line that says:  $v->validator_uri("http://localhost/w3c-validator/check");
+3. (Important!) Make the script "sleep 1" inside the 1st foreach so you don't hammer the w3c's server
+4. Visit "batchValid.html" in your browser, put your URIs in the textbox separated by newlines and click the button
