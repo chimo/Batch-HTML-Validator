@@ -43,10 +43,23 @@ foreach $pair (@fv_pairs) {
 # For each url, send to validator
 foreach $val (@values) {
     if ( $v->validate($val) ) {
-        if ( $v->is_valid ) { 
-            printf ("<h2 class='valid'>%s is valid</h2>\n", $v->uri);
-        } else {
+        if ( $v->is_valid ) {
+            if ( !exists($INPUT{'hidevalid'}) ) {
+                printf ("<h2 class='valid'>%s is valid</h2>\n", $v->uri);
+            }
+        }
+        else {
             printf ("<div class='invalid'>\n<h2 class='invalid'>%s is not valid</h2>\n<ul>\n", $v->uri);
+            
+            # List warnings (apparently the dev version of the validator is needed(?)) # TODO: Look into this
+#            if ( !exists($INPUT{'hidewarnings'}) ) {
+#                foreach my $warning ( @{$v->warnings} ) {
+#                    printf("<li class='warning'>%s at line %d</li>\n", $warning->msg,
+#                            $warning->line);
+#                }
+#            }
+
+            # List errors
             foreach my $error ( @{$v->errors} ) {
                 printf("<li class='error'>%s at line %d</li>\n", $error->msg,
                         $error->line);
@@ -56,6 +69,11 @@ foreach $val (@values) {
     }
     else { # Something went wrong; couldn't validate document :(
         printf ("<h2>Failed to validate the website: %s</h2>", $v->validator_error);
+    }
+
+    # Sleep between requests if we're using the W3C's servers ( as per: http://validator.w3.org/docs/api.html#requestformat )
+    if($v->uri() eq 'http://validator.w3.org/check') {
+        sleep(1);
     }
 }
 print "\n</div>\n</body>\n</html>";
