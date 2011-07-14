@@ -1,18 +1,29 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html lang="en">
     <head>
-        <title></title>
+        <title>Batch Validator</title>
+        <style type="text/css">
+            ul {list-style-type: none; overflow: hidden; margin: 0; padding: 0;}
+            li {float: left; margin-right: 5px;}
+        </style>
     </head>
     <body>
+        <h1><abbr title="HyperText Markup Language">HTML</abbr> Validator</h1>
         <div>
+            <label for="urls">Separate your URLs by new lines:</label>
             <form action="batchValid.pl" method="post">
-                <textarea name="urls"></textarea>
+                <textarea cols="60" rows="8" name="urls" id="urls"></textarea>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="hidevalid" name="hidevalid" value="yes" /> <label for="hidevalid">Hide valid results</label>
+                    </li>
+<!-- Apparently the dev version of the validator is needed for warnings(?) TODO: Look into this.
+                    <li>
+                        <input type="checkbox" id="hidewarnings" name="hidewarnings" value="yes" /> <label for="hidewarnings">Hide warnings</label>
+                        </li> -->
+                </ul>
                 <input type="submit" />
             </form>
         </div>
     </body>
 </html>
-
