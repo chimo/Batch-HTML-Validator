@@ -1,6 +1,7 @@
 #!/usr/bin/perl -T
 
 use WebService::Validator::HTML::W3C;
+use Data::Dumper;
 
 my $v = WebService::Validator::HTML::W3C->new(
         detailed    =>  1
@@ -38,10 +39,14 @@ foreach $pair (@fv_pairs) {
 }
 
 # Separate urls by newline
-@values = split(/\n/, $INPUT{'urls'});
+@values = split(/\r\n/, $INPUT{'urls'});
 
 # For each url, send to validator
 foreach $val (@values) {
+    if( $val eq '' ) {
+        next; # Skip blank lines (TODO: remove blank lines as part of cleanup before this loop)
+    }
+        
     if ( $v->validate($val) ) {
         if ( $v->is_valid ) {
             if ( !exists($INPUT{'hidevalid'}) ) {
@@ -68,7 +73,7 @@ foreach $val (@values) {
         }
     }
     else { # Something went wrong; couldn't validate document :(
-        printf ("<h2>Failed to validate the website: %s</h2>", $v->validator_error);
+        printf ("<h2>Failed to validate %s: %s</h2>", $val, $v->validator_error);
     }
 
     # Sleep between requests if we're using the W3C's servers ( as per: http://validator.w3.org/docs/api.html#requestformat )
