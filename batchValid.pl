@@ -1,7 +1,42 @@
 #!/usr/bin/perl -T
 
 use WebService::Validator::HTML::W3C;
-use Data::Dumper;
+use XML::XPath;
+
+# using modified "warning" sub since the original one chokes when <m:line> is present but empty in SOAP response
+sub my_warn {
+    my $content = shift;
+    my $xp = XML::XPath->new( xml => $content );
+
+    my @warnings;
+
+    my @messages = $xp->findnodes( '/env:Envelope/env:Body/m:markupvalidationresponse/m:warnings/m:warninglist/m:warning' );
+
+    foreach my $msg ( @messages ) {
+        my ($line, $col, $node);
+        if ( $node = $xp->find( './m:line', $msg ) ) {
+            if(defined($node->get_node(1)->getChildNode(1))) {
+                $line = $node->get_node(1)->getChildNode(1)->getValue;
+            }
+        }
+        if ( $node = $xp->find( './m:col', $msg ) ) {
+            if(defined($node->get_node(1)->getChildNode(1))) {
+                $col = $node->get_node(1)->getChildNode(1)->getValue;
+            }
+        }
+
+        my $warning = WebService::Validator::HTML::W3C::Warning->new({ 
+                      line => $line,
+                      col  => $col,
+                      msg  => $xp->find( './m:message', $msg )->get_node(1)->getChildNode(1)->getValue,
+                  });
+
+        push @warnings, $warning;
+    }
+
+    return \@warnings;
+}
+
 
 my $v = WebService::Validator::HTML::W3C->new(
         detailed    =>  1
@@ -43,34 +78,53 @@ foreach $pair (@fv_pairs) {
 
 # For each url, send to validator
 foreach $val (@values) {
+
     if( $val eq '' ) {
         next; # Skip blank lines (TODO: remove blank lines as part of cleanup before this loop)
     }
-        
+
     if ( $v->validate($val) ) {
+        # Announce if valid
         if ( $v->is_valid ) {
             if ( !exists($INPUT{'hidevalid'}) ) {
-                printf ("<h2 class='valid'>%s is valid</h2>\n", $v->uri);
+                printf ("<div class='valid'><h2>%s is valid</h2>\n", $v->uri);
             }
         }
         else {
-            printf ("<div class='invalid'>\n<h2 class='invalid'>%s is not valid</h2>\n<ul>\n", $v->uri);
-            
-            # List warnings (apparently the dev version of the validator is needed(?)) # TODO: Look into this
-#            if ( !exists($INPUT{'hidewarnings'}) ) {
-#                foreach my $warning ( @{$v->warnings} ) {
-#                    printf("<li class='warning'>%s at line %d</li>\n", $warning->msg,
-#                            $warning->line);
-#                }
-#            }
+            printf ("<div class='invalid'>\n<h2>%s is not valid</h2>\n", $v->uri);
+        }
 
-            # List errors
+        # List warnings
+        if ( !exists($INPUT{'hidewarnings'}) ) {
+            $warnings = my_warn($v->_content);
+            if(scalar(@$warnings) > 0) {
+                print "<div class='warnings'>\n<h3>Warnings</h3>\n<ul>\n";
+                # using modified "warning" sub since the original one chokes when <m:line> is present but empty in SOAP response
+                foreach my $warning ( @$warnings ) {
+                    if(defined($warning->line)) {
+                        printf("<li>%s at line %d</li>\n", $warning->msg,
+                            $warning->line);
+                    }
+                    else {
+                        printf("<li>%s</li>\n", $warning->msg);
+                    }
+
+                }
+                print "</ul>\n</div>\n";
+            }
+        }
+
+        # List errors
+        if($v->errorcount > 0) {
+            print "<div class='errors'>\n<h3>Errors</h3>\n<ul>\n";
             foreach my $error ( @{$v->errors} ) {
                 printf("<li class='error'>%s at line %d</li>\n", $error->msg,
                         $error->line);
             }
-            print "</ul>\n</div>";
+            print "</ul>\n</div>\n";
         }
+
+        print '</div>';
     }
     else { # Something went wrong; couldn't validate document :(
         printf ("<h2>Failed to validate %s: %s</h2>", $val, $v->validator_error);
@@ -82,4 +136,3 @@ foreach $val (@values) {
     }
 }
 print "\n</div>\n</body>\n</html>";
-
