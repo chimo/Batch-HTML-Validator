@@ -14,15 +14,13 @@ sub my_warn {
 
     foreach my $msg ( @messages ) {
         my ($line, $col, $node);
-        if ( $node = $xp->find( './m:line', $msg ) ) {
-            if(defined($node->get_node(1)->getChildNode(1))) {
-                $line = $node->get_node(1)->getChildNode(1)->getValue;
-            }
+
+        if( ($line = $xp->findvalue('./m:line', $msg)) eq "") {
+            $line = undef;
         }
-        if ( $node = $xp->find( './m:col', $msg ) ) {
-            if(defined($node->get_node(1)->getChildNode(1))) {
-                $col = $node->get_node(1)->getChildNode(1)->getValue;
-            }
+
+        if( ($col = $xp->findvalue('./m:col', $msg)) eq "") {
+            $col = undef;
         }
 
         my $warning = WebService::Validator::HTML::W3C::Warning->new({ 
@@ -96,11 +94,11 @@ foreach $val (@values) {
 
         # List warnings
         if ( !exists($INPUT{'hidewarnings'}) ) {
+            # using modified "warning" sub since the original one chokes when <m:line> is present but empty in SOAP response
             $warnings = my_warn($v->_content);
-            if(scalar(@$warnings) > 0) {
+            if(scalar(@{$warnings}) > 0) {
                 print "<div class='warnings'>\n<h3>Warnings</h3>\n<ul>\n";
-                # using modified "warning" sub since the original one chokes when <m:line> is present but empty in SOAP response
-                foreach my $warning ( @$warnings ) {
+                foreach my $warning ( @{$warnings} ) {
                     if(defined($warning->line)) {
                         printf("<li>%s at line %d</li>\n", $warning->msg,
                             $warning->line);
