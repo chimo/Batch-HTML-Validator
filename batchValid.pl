@@ -116,8 +116,14 @@ foreach $val (@values) {
         if($v->errorcount > 0) {
             print "<div class='errors'>\n<h3>Errors</h3>\n<ul>\n";
             foreach my $error ( @{$v->errors} ) {
-                printf("<li class='error'>%s at line %d</li>\n", $error->msg,
+                printf("<li class='error'>%s at line %d\n", $error->msg,
                         $error->line);
+
+                if( !exists($INPUT{'hideexpl'}) ) {
+                    printf("<p>%s</p>", $error->explanation);
+                }
+
+                print("</li>");
             }
             print "</ul>\n</div>\n";
         }
