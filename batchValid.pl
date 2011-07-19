@@ -100,12 +100,18 @@ foreach $val (@values) {
                 print "<div class='warnings'>\n<h3>Warnings</h3>\n<ul>\n";
                 foreach my $warning ( @{$warnings} ) {
                     if(defined($warning->line)) {
-                        printf("<li>%s at line %d</li>\n", $warning->msg,
+                        printf("<li>%s at line %d\n", $warning->msg,
                             $warning->line);
                     }
                     else {
-                        printf("<li>%s</li>\n", $warning->msg);
+                        printf("<li>%s\n", $warning->msg);
                     }
+
+                    if( (!exists($INPUT{'hidecontext'})) && (defined($warning->source))) {
+                        printf("<p>%s</p>", $warning->source);
+                    }
+
+                    print("</li>");
 
                 }
                 print "</ul>\n</div>\n";
@@ -121,6 +127,10 @@ foreach $val (@values) {
 
                 if( !exists($INPUT{'hideexpl'}) ) {
                     printf("<p>%s</p>", $error->explanation);
+                }
+
+                if( (!exists($INPUT{'hidecontext'}) && (defined($error->source))) ) {
+                    printf("<p>%s</p>", $error->source);
                 }
 
                 print("</li>");
