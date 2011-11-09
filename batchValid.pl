@@ -3,39 +3,6 @@
 use WebService::Validator::HTML::W3C;
 use XML::XPath;
 
-# using modified "warning" sub since the original one chokes when <m:line> is present but empty in SOAP response
-sub my_warn {
-    my $content = shift;
-    my $xp = XML::XPath->new( xml => $content );
-
-    my @warnings;
-
-    my @messages = $xp->findnodes( '/env:Envelope/env:Body/m:markupvalidationresponse/m:warnings/m:warninglist/m:warning' );
-
-    foreach my $msg ( @messages ) {
-        my ($line, $col, $node);
-
-        if( ($line = $xp->findvalue('./m:line', $msg)) eq "") {
-            $line = undef;
-        }
-
-        if( ($col = $xp->findvalue('./m:col', $msg)) eq "") {
-            $col = undef;
-        }
-
-        my $warning = WebService::Validator::HTML::W3C::Warning->new({ 
-                      line => $line,
-                      col  => $col,
-                      msg  => $xp->find( './m:message', $msg )->get_node(1)->getChildNode(1)->getValue,
-                  });
-
-        push @warnings, $warning;
-    }
-
-    return \@warnings;
-}
-
-
 my $v = WebService::Validator::HTML::W3C->new(
         detailed    =>  1
         );
@@ -94,25 +61,17 @@ foreach $val (@values) {
 
         # List warnings
         if ( !exists($INPUT{'hidewarnings'}) ) {
-            # using modified "warning" sub since the original one chokes when <m:line> is present but empty in SOAP response
-            $warnings = my_warn($v->_content);
-            if(scalar(@{$warnings}) > 0) {
-                print "<div class='warnings'>\n<h3>Warnings</h3>\n<ul>\n";
-                foreach my $warning ( @{$warnings} ) {
-                    if(defined($warning->line)) {
-                        printf("<li>%s at line %d\n", $warning->msg,
+            if($v->warningcount > 0) {
+                print "<div class='errors'>\n<h3>Warnings</h3>\n<ul>\n";
+                foreach my $warning ( @{$v->warnings} ) {
+                    printf("<li class='warning'>%s at line %d\n", $warning->msg,
                             $warning->line);
-                    }
-                    else {
-                        printf("<li>%s\n", $warning->msg);
-                    }
 
-                    if( (!exists($INPUT{'hidecontext'})) && (defined($warning->source))) {
+                    if( (!exists($INPUT{'hidecontext'}) && (defined($warning->source))) ) {
                         printf("<p>%s</p>", $warning->source);
                     }
 
                     print("</li>");
-
                 }
                 print "</ul>\n</div>\n";
             }
